@@ -1,0 +1,16 @@
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
+
+public class Tester {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		
+		System.out.println(Arrays.toString("A".getBytes()));
+		System.out.println(Arrays.toString("A".getBytes(StandardCharsets.UTF_16LE)));
+//		Encryptor test = new Encryptor("My name is Donnell", "abcdefgh");
+//		test.encrypt();
+	}
+
+}
