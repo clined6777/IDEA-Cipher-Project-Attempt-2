@@ -1,0 +1,153 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Arrays;
+import java.util.Scanner;
+
+
+public class Decryptor implements Ciphering{
+	private String cipherText, plainText, key;
+	private byte[] byteText, byteKey;
+	private short[] subKeys;
+	
+	public Decryptor (String text, String keySet) {
+		plainText = "";
+		key = keySet;
+		cipherText = text;
+		byteKey = keySet.getBytes();
+		byteKey = Arrays.copyOf(byteKey, 16);
+		subKeys = new short[52];
+		byte[] tempKey = byteKey;
+		for (int k = 0; k < 6; k++) {
+			subKeys[8 * k] = (short) (byteKey[0] << 8 + (int) byteKey[1]);
+			subKeys[8 * k + 1] = (short) ((byteKey[2] << 8) + (int) byteKey[3]);
+			subKeys[8 * k + 2] = (short) ((byteKey[4] << 8) + (int) byteKey[5]);
+			subKeys[8 * k + 3] = (short) ((byteKey[6] << 8) + (int) byteKey[7]);
+			subKeys[8 * k + 4] = (short) ((byteKey[8] << 8) + (int) byteKey[9]);
+			subKeys[8 * k + 5] = (short) ((byteKey[10] << 8) + (int) byteKey[11]);
+			subKeys[8 * k + 6] = (short) ((byteKey[12] << 8) + (int) byteKey[13]);
+			subKeys[8 * k + 7] = (short) ((byteKey[14] << 8) + (int) byteKey[15]);
+			for (int g = 0; g < byteKey.length; g++)
+				tempKey[g] = (byte) (((byteKey[(g + 3) % byteKey.length]) << 1) + ((byteKey[(g + 4) % byteKey.length]) >> 7));
+			byteKey = tempKey;
+		}
+		for (int k = 0; k < 4; k++)
+			subKeys[48 + k] = (short) ((byteKey[2 * k] << 8) + (int) (byteKey[2 * k + 1]));
+		byte[] tempByte = text.getBytes();
+		if (tempByte.length % 8 != 0) {
+			int spaces = 8 - (tempByte.length % 8);
+			byteText = new byte[tempByte.length + spaces];
+			for (int i = 0; i < tempByte.length; i++)
+				byteText[i] = tempByte[i];
+			for (int j = tempByte.length; j < byteText.length; j++) {
+				byteText[j] = 32;
+			}
+		}
+		else
+			byteText = text.getBytes();
+	}
+	
+	public Decryptor (File fileText) {
+		try {
+			plainText = "";
+			Scanner file = new Scanner(fileText);
+			key = file.nextLine();
+			while (file.hasNextLine()) {
+				cipherText += file.nextLine();
+			}
+			byteKey = key.getBytes();
+			subKeys = new short[52];
+			byte[] tempKey = byteKey;
+			for (int k = 0; k < 6; k++) {
+				subKeys[8 * k] = (short) (byteKey[0] << 8 + (int) byteKey[1]);
+				subKeys[8 * k + 1] = (short) (byteKey[2] << 8 + (int) byteKey[3]);
+				subKeys[8 * k + 2] = (short) (byteKey[4] << 8 + (int) byteKey[5]);
+				subKeys[8 * k + 3] = (short) (byteKey[6] << 8 + (int) byteKey[7]);
+				subKeys[8 * k + 4] = (short) (byteKey[8] << 8 + (int) byteKey[9]);
+				subKeys[8 * k + 5] = (short) (byteKey[10] << 8 + (int) byteKey[11]);
+				subKeys[8 * k + 6] = (short) (byteKey[12] << 8 + (int) byteKey[13]);
+				subKeys[8 * k + 7] = (short) (byteKey[14] << 8 + (int) byteKey[15]);
+				for (int g = 0; g < byteKey.length; g++)
+					tempKey[g] = (byte) ((byteKey[(g + 3) % byteKey.length] << 1) % 256 + byteKey[(g + 4) % byteKey.length] >> 7);
+				byteKey = tempKey;
+			}
+			for (int k = 0; k < 4; k++)
+				subKeys[48 + k] = (short) (byteKey[2 * k] << 8 + (int) byteKey[2 * k + 1]);
+			byte[] tempByte = plainText.getBytes();
+			if (tempByte.length % 8 != 0) {
+				int spaces = 8 - (tempByte.length % 8);
+				byteText = new byte[tempByte.length + spaces];
+				for (int i = 0; i < tempByte.length; i++)
+					byteText[i] = tempByte[i];
+				for (int j = tempByte.length; j < byteText.length; j += 2) {
+					byteText[j] = 3;
+					byteText[j + 1] = 2;
+				}
+			}
+			else
+				byteText = plainText.getBytes();
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void decrypt() {
+		
+	}
+	
+	public short eXOR(short sh1, short sh2) {
+		return (short) (sh1 ^ sh2);
+	}
+	
+	public short addMod(short sh1, short sh2) {
+		return (short) (sh1 + sh2);
+	}
+	
+	public short multMod(int sh1, int sh2) {
+		int output = 0;
+		if (sh1 == 0)
+			sh1 = 1<<16;
+		if (sh2 == 0)
+			sh2 = 1<<16;
+		output = (sh1 * sh2) % ((1<<16)+1);
+		if (output == 1<<16)
+			output = 0;		
+		return (short) output;
+	}
+	
+	public void setKey(String keySet) {
+		key = keySet;
+		byteKey = keySet.getBytes();
+		byte[] tempKey = byteKey;
+		for (int k = 0; k < 6; k++) {
+			subKeys[8 * k] = (short) (byteKey[0] << 8 + (int) byteKey[1]);
+			subKeys[8 * k + 1] = (short) (byteKey[2] << 8 + (int) byteKey[3]);
+			subKeys[8 * k + 2] = (short) (byteKey[4] << 8 + (int) byteKey[5]);
+			subKeys[8 * k + 3] = (short) (byteKey[6] << 8 + (int) byteKey[7]);
+			subKeys[8 * k + 4] = (short) (byteKey[8] << 8 + (int) byteKey[9]);
+			subKeys[8 * k + 5] = (short) (byteKey[10] << 8 + (int) byteKey[11]);
+			subKeys[8 * k + 6] = (short) (byteKey[12] << 8 + (int) byteKey[13]);
+			subKeys[8 * k + 7] = (short) (byteKey[14] << 8 + (int) byteKey[15]);
+			for (int g = 0; g < byteKey.length; g++)
+				tempKey[g] = (byte) ((byteKey[(g + 3) % byteKey.length] << 1) % 256 + byteKey[(g + 4) % byteKey.length] >> 7);
+			byteKey = tempKey;
+		}
+		for (int k = 0; k < 4; k++)
+			subKeys[48 + k] = (short) (byteKey[2 * k] << 8 + (int) byteKey[2 * k + 1]);
+	}
+	
+	public String getKey() {
+		return key;
+	}
+	
+	public String getPlainText() {
+		return plainText;
+	}
+	
+	public String getCipherText() {
+		System.out.println(Arrays.toString(cipherText.getBytes()));
+		return cipherText;
+	}
+
+}

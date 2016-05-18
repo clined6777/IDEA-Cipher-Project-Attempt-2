@@ -15,10 +15,6 @@ public class Encryptor implements Ciphering{
 		plainText = text;
 		key = keySet;
 		cipherText = "";
-		//if (keySet.length() != 8) {
-		//	System.out.println("Keys must be long in order to proceed");
-		//	return;
-		//}
 		byteKey = keySet.getBytes();
 		byteKey = Arrays.copyOf(byteKey, 16);
 		subKeys = new short[52];
@@ -35,8 +31,6 @@ public class Encryptor implements Ciphering{
 			for (int g = 0; g < byteKey.length; g++)
 				tempKey[g] = (byte) (((byteKey[(g + 3) % byteKey.length]) << 1) + ((byteKey[(g + 4) % byteKey.length]) >> 7));
 			byteKey = tempKey;
-//			for (int g = 0; g < 8*k+7; g++)
-//				byteKey[g] = tempKey[g];
 		}
 		for (int k = 0; k < 4; k++)
 			subKeys[48 + k] = (short) ((byteKey[2 * k] << 8) + (int) (byteKey[2 * k + 1]));
@@ -48,7 +42,6 @@ public class Encryptor implements Ciphering{
 				byteText[i] = tempByte[i];
 			for (int j = tempByte.length; j < byteText.length; j++) {
 				byteText[j] = 32;
-				//byteText[j + 1] = 2;
 			}
 		}
 		else
@@ -147,8 +140,10 @@ public class Encryptor implements Ciphering{
 				shortToHex[4 * i + 2] = halfAdd2;
 				shortToHex[4 * i + 3] = halfMult2;
 			}
-			for (int i = 0; i < shortToHex.length; i++)
-				cipherText += (char)shortToHex[i];
+			for (int i = 0; i < shortToHex.length; i++) {
+				Short temp = shortToHex[i];
+				cipherText += (char)(temp & 0xFF);
+			}
 		}
 	}
 	
@@ -160,18 +155,15 @@ public class Encryptor implements Ciphering{
 		return (short) (sh1 + sh2);
 	}
 	
-	public short multMod(short sh1, short sh2) {
+	public short multMod(int sh1, int sh2) {
 		int output = 0;
-		if (sh1 != 0 && sh2 != 0)
-			output = (sh1 * 65536) & 0xFFFF;
-		else if (sh1 == 0)
-			output = (65536 * sh2) & 0xFFFF;
-		else if (sh2 == 0)
-			output = (sh1 * 65536) & 0xFFFF;
-		else if (sh1 == 0 && sh2 == 0)
-			output = (65536 * 65536) & 0xFFFF;
-		if (output == 65536)
-			output = 0;
+		if (sh1 == 0)
+			sh1 = 1<<16;
+		if (sh2 == 0)
+			sh2 = 1<<16;
+		output = (sh1 * sh2) % ((1<<16)+1);
+		if (output == 1<<16)
+			output = 0;		
 		return (short) output;
 	}
 	
